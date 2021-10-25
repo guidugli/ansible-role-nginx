@@ -1,0 +1,30 @@
+---
+# vars file for nginx
+
+_nginx_username:
+  default: nginx
+  Ubuntu: www-data
+  Debian: www-data
+
+nginx_username: "{{ _nginx_username[ansible_distribution ~ '-' ~ ansible_distribution_major_version] |
+                default(_nginx_username[ansible_distribution]) | default(_nginx_username['default']) }}"
+
+# Package name for each distribution
+_nginx_packages:
+  default: ['nginx']
+#  RedHat: ['nginx']
+#  Fedora: ['nginx']
+#  CentOS: ['nginx']
+#  Ubuntu: ['nginx']
+#  Debian: ['nginx']
+
+nginx_packages: "{{ _nginx_packages[ansible_distribution ~ '-' ~ ansible_distribution_major_version] |
+                default(_nginx_packages[ansible_distribution]) | default(_nginx_packages['default']) }}"
+
+_nginx_modules_location:
+  default: /usr/share/nginx/modules
+  Ubuntu: /etc/nginx/modules-enabled
+  Debian: /etc/nginx/modules-enabled
+
+nginx_modules_location: "{{ _nginx_modules_location[ansible_distribution ~ '-' ~ ansible_distribution_major_version] |
+               default(_nginx_modules_location[ansible_distribution]) | default(_nginx_modules_location['default']) }}"

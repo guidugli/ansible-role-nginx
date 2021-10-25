@@ -1,0 +1,23 @@
+---
+
+- name: Check if HTTP WebDAV module is not installed
+  ansible.builtin.shell: |
+    set -o pipefail
+    nginx -V 2>&1 | grep with-http_dav_module
+  args:
+    executable: /bin/bash
+  register: nginx_cmd_result
+  changed_when: false
+  failed_when: nginx_cmd_result.rc == 0
+  ignore_errors: "{{ not (nginx_level2_strict_check | default(false)) }}"
+
+- name: Check if modules with gzip functionality are disabled
+  ansible.builtin.shell: |
+    set -o pipefail
+    nginx -V 2>&1 | grep 'with-http_gzip_module\|with-http_gzip_static_module'
+  args:
+    executable: /bin/bash
+  register: nginx_cmd_result
+  changed_when: false
+  failed_when: nginx_cmd_result.rc == 0
+  ignore_errors: "{{ not (nginx_level2_strict_check | default(false)) }}"

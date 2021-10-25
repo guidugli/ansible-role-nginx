@@ -1,0 +1,141 @@
+---
+
+- name: Check if these 'yes','no','true','false' values are invalid
+  assert:
+    quiet: true
+    that:
+      - (lookup('vars', item) | lower) in ['true','false']
+    msg: "Invalid value for {{ item }}. Allowed values are 'yes', 'no', 'true', 'false'."
+  loop:
+    - nginx_level2_strict_check
+
+- name: Check variables that accept only on or off values
+  assert:
+    quiet: yes
+    that:
+      - (lookup('vars', item) | lower) in ['on','off']
+    msg: "Invalid value for {{ item }}. Allowed values are 'on', 'off'"
+  when: lookup('vars', item) is defined
+  loop:
+    - nginx_multi_accept
+    - nginx_gzip_vary
+    - nginx_open_file_cache_errors
+
+- name: Check integer values
+  assert:
+    quiet: true
+    that:
+      - (lookup('vars', item) | int(-1)) >= 0
+    msg: "Invalid integer value for {{ item }}"
+  when: lookup('vars', item) is defined
+  loop:
+    - nginx_worker_connections
+    - nginx_worker_rlimit_nofile
+    - nginx_types_hash_max_size
+    - nginx_send_timeout
+    - nginx_client_body_timeout
+    - nginx_client_header_timeout
+    - nginx_slimit_connections
+    - nginx_gzip_comp_level
+    - nginx_open_file_cache_min_uses
+
+- name: Check string values
+  assert:
+    quiet: true
+    that:
+      - lookup('vars', item) is defined
+      - lookup('vars', item) | type_debug is string
+      - lookup('vars', item) | length > 0
+    msg: "Invalid string value for {{ item }}"
+  when: lookup('vars', item) is defined
+  loop:
+    - nginx_keepalive_timeout
+    - nginx_ssl_protocols
+    - nginx_ssl_session_cache
+    - nginx_ssl_session_timeout
+    - nginx_proxy_ssl_protocols
+    - nginx_client_body_buffer_size
+    - nginx_client_header_buffer_size
+    - nginx_client_max_body_size
+    - nginx_large_client_header_buffers
+    - nginx_slimit_period
+    - nginx_gzip_buffers
+    - nginx_gzip_http_version
+    - nginx_open_file_cache
+    - nginx_open_file_cache_valid
+
+- name: Validate nginx_allowed_methods
+  assert:
+    quiet: true
+    that:
+      - nginx_allowed_methods is sequence
+    msg: "nginx_allowed_methods is not a valid sequence"
+  when: nginx_allowed_methods is defined
+
+- name: Validate nginx_allowed_methods items
+  assert:
+    quiet: true
+    that:
+      - item in in ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
+    msg: "Item {{ item }} is not a valid http method"
+  loop: "{{ nginx_allowed_methods }}"
+  when: nginx_allowed_methods is defined
+
+- name: Validate nginx_gzip_proxied
+  assert:
+    quiet: true
+    that:
+      - nginx_gzip_proxied in ['off', 'expired', 'no-cache', 'no-store',
+        'private', 'no_last_modified', 'no_etag', 'auth', 'any']
+    msg: "Invalid value for nginx_gzip_proxied variable"
+  when: nginx_gzip_proxied is defined
+
+- name: Validate nginx_gzip_types
+  assert:
+    quiet: true
+    that:
+      - nginx_gzip_types is sequence
+    msg: "nginx_gzip_types is not a valid sequence"
+  when: nginx_gzip_types is defined
+
+- name: Validate nginx_gzip_types items
+  assert:
+    quiet: true
+    that:
+      - item is string
+      - item | length > 0
+    msg: "Item {{ item }} is not a valid string"
+  loop: "{{ nginx_gzip_types }}"
+  when: nginx_gzip_types is defined
+
+- name: Validate list contents of nginx_proxy_sites
+  assert:
+    quiet: true
+    that:
+      - item.name is defined
+      - item.name | type_debug is string
+      - item.name | length > 0
+      - item.server_name is defined
+      - item.server_name | type_debug is string
+      - item.server_name | length > 0
+      - item.access_log_name is defined
+      - item.access_log_name | type_debug is string
+      - item.access_log_name | length > 0
+      - item.error_log_name is defined
+      - item.error_log_name | type_debug is string
+      - item.error_log_name | length > 0
+      - item.proxy_pass is defined
+      - item.proxy_pass | type_debug is string
+      - item.proxy_pass | length > 0
+      - item.ssl_certificate is not defined or
+        item.ssl_certificate | type_debug is string
+      - item.ssl_certificate is not defined or
+        item.ssl_certificate | length > 0
+      - item.ssl_certificate_key is not defined or
+        item.ssl_certificate_key | type_debug is string
+      - item.ssl_certificate_key is not defined or
+        item.ssl_certificate_key | length > 0
+      - using_certbot | type_debug == 'bool'
+    msg: "Invalid values for nginx_proxy_sites item {{ item.name }}"
+    loop: "{{ nginx_proxy_sites }}"
+    when: nginx_proxy_sites is defined

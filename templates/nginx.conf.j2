@@ -1,0 +1,133 @@
+user {{ nginx_username }};
+worker_processes {{ nginx_worker_processes | default("auto")}};
+{%- if nginx_worker_rlimit_nofile is defined -%}
+worker_rlimit_nofile {{ nginx_worker_rlimit_nofile }};
+{% endif %}
+pid /run/nginx.pid;
+include {{ nginx_modules_location }}/*.conf;
+
+events {
+	worker_connections {{ nginx_worker_connections | default(768) }};
+	multi_accept {{ nginx_multi_accept | default("off") }};
+{%- if nginx_use_epoll is defined and nginx_use_epoll -%}
+	use epoll;
+{% endif %}
+}
+
+http {
+
+	##
+	# Basic Settings
+	##
+
+	sendfile on;
+	tcp_nopush on;
+	tcp_nodelay on;
+	keepalive_timeout {{ nginx_keepalive_timeout | default(10) }};
+	send_timeout {{ nginx_send_timeout | default(10) }};
+	types_hash_max_size {{ nginx_types_hash_max_size | default(2048) }};
+	server_tokens off;
+
+{%- if nginx_server_names_hash_bucket_size is defined -%}
+	server_names_hash_bucket_size {{ nginx_server_names_hash_bucket_size }};
+{% else %}
+	# server_names_hash_bucket_size 64;
+{% endif %}
+	# server_name_in_redirect off;
+
+	include /etc/nginx/mime.types;
+	default_type application/octet-stream;
+
+	##
+	# SSL Settings
+	##
+
+	ssl_protocols {{ nginx_ssl_protocols | default("TLSv1.2 TLSv1.3") }};
+	ssl_prefer_server_ciphers on;
+	ssl_session_tickets off;
+	ssl_stapling on;
+	ssl_stapling_verify on;
+	ssl_session_cache {{ nginx_ssl_session_cache | default("shared:SSL:50m") }};
+	ssl_session_timeout {{ nginx_ssl_session_timeout | default("5m") }};
+
+	##
+	# Add headers for security
+	##
+
+	add_header X-Frame-Options "SAMEORIGIN";
+	add_header X-Content-Type-Options "nosniff";
+	add_header X-Xss-Protection "1; mode=block";
+	add_header Content-Security-Policy "default-src 'self'";
+	add_header Referrer-Policy "no-referrer";
+
+	# Uncomment line below and comment the line after to disable preload
+	#add_header Strict-Transport-Security "max-age=15768000;";
+	add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
+	
+	##
+	# Proxy Settings
+	##
+
+	proxy_hide_header X-Powered-By;
+	proxy_hide_header Server;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_ssl_protocols {{ nginx_proxy_ssl_protocols | default("TLSv1.2 TLSv1.3") }};
+
+	##
+	# Client settings
+	##
+
+	client_body_timeout {{ nginx_client_body_timeout | default(10) }};
+	client_header_timeout {{ nginx_client_header_timeout | default(10) }};
+	client_body_buffer_size  {{ nginx_client_body_buffer_size | default("1K") }};
+	client_header_buffer_size {{ nginx_client_header_buffer_size | default("1k") }};
+	client_max_body_size {{ nginx_client_max_body_size | default("100K") }};
+	large_client_header_buffers {{ nginx_large_client_header_buffers | default("2 1k") }};
+
+	##
+	# Logging Settings
+	##
+
+	access_log /var/log/nginx/access.log;
+	error_log /var/log/nginx/error.log;
+
+	### Directive describes the zone, in which the session states are stored i.e. store in slimits. ###
+	### 1m can handle 32000 sessions with 32 bytes/session, set to 5m x 32000 session ###
+	limit_conn_zone $binary_remote_addr zone=addr:{{ nginx_slimit_period | default("5m") }};
+ 
+	##
+	# Gzip Settings
+	##
+
+	gzip on;
+	gzip_disable "msie6";
+	gzip_vary {{ nginx_gzip_vary | default("off") }};
+	gzip_proxied {{ nginx_gzip_proxied | default("off") }};
+	gzip_comp_level {{ nginx_gzip_comp_level | default(1) }};
+{%- if nginx_gzip_buffers is defined -%}
+	gzip_buffers {{ nginx_gzip_buffers }};
+{% else %}
+	# gzip_buffers 16 8k;
+{% endif %}
+	gzip_http_version {{ nginx_gzip_http_version | default("1.1") }};
+{%- if (nginx_gzip_types is defined) and (nginx_gzip_types | length > 0) -%}
+	gzip_types {{ nginx_gzip_types | join(' ') }};
+{% else %}
+	# gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+{% endif %}
+
+	# FILE HANDLE CACHE
+	open_file_cache {{ nginx_open_file_cache | default("off") }};
+	open_file_cache_valid {{ nginx_open_file_cache_valid | default("60s") }};
+	open_file_cache_min_uses {{ nginx_open_file_cache_min_uses | default(1) }};
+	open_file_cache_errors {{ nginx_open_file_cache_errors | default("off") }};
+
+	##
+	# Virtual Host Configs
+	##
+
+	include /etc/nginx/conf.d/*.conf;
+	include /etc/nginx/sites-enabled/*;
+}
+

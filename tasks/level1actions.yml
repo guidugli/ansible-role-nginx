@@ -1,0 +1,182 @@
+---
+
+- name: Set /etc/nginx/nginx.conf file
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0640'
+    backup: true
+    validate: /usr/sbin/nginx -c %s -t
+  notify: Reload nginx configuration
+
+- name: Set security settings
+  ansible.builtin.template:
+    src: 00_security.conf.j2
+    dest: /etc/nginx/conf.d/00_security.conf
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Reload nginx configuration
+
+- name: Copy configuration files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/nginx/conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Reload nginx configuration
+  loop:
+    - "00_log.conf"
+
+- name: Copy Fedora default site configuration
+  ansible.builtin.copy:
+    src: 01_redhat_default_site.conf
+    dest: /etc/nginx/conf.d/01_redhat_default_site.conf
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Reload nginx configuration
+  when:
+    - nginx_create_redhat_default_site
+    - ansible_distribution in ['Fedora', 'RedHat', 'CentOS']
+
+- name: Add proxy configuration
+  vars:
+    domain: "{{ item.server_name | regex_search('^[^.]+\\.(.*)','\\1') | first | regex_escape() }}"
+    escaped_domain: "^[^.]+\\.{{ domain }}"
+  ansible.builtin.template:
+    src: proxy_config.j2
+    dest: "/etc/nginx/conf.d/10_{{ item.name }}.conf"
+    owner: root
+    group: root
+    mode: '0640'
+    backup: true
+  loop: "{{ nginx_proxy_sites | default([]) }}"
+  notify: Reload nginx configuration
+
+# The autoindex module processes requests ending with the slash character. This
+# feature enables directory listing, which could be useful in attacker
+# reconnaissance, so it should be disabled.
+- name: Ensure the autoindex module is disabled
+  shell: egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf /etc/nginx/conf.d/*
+  register: nginx_cmd_result
+  changed_when: false
+  failed_when: nginx_cmd_result.rc == 0
+
+# Ensuring a non-privileged, dedicated service account is used is a defense in
+# depth measure to limit what an attacker who compromises the account can do.
+#- name: Ensure NGINX is run using a non-privileged, dedicated service account
+#  shell: |
+#    set -o pipefail
+#    grep "user[^;]*;" /etc/nginx/nginx.conf | awk '{ print $2 }' | tr -d ';'
+#  args:
+#    executable: /bin/bash
+#  register: nginx_cmd_result
+#  failed_when: nginx_cmd_result.rc != 0
+
+- name: Verify the nginx dedicated user is not privileged
+  command: "sudo -l -U {{ nginx_username }}"
+  register: nginx_cmd_result
+  failed_when: nginx_cmd_result.rc != 0 or
+               "is not allowed to run sudo" not in nginx_cmd_result.stdout
+  changed_when: false
+
+- name: Verify the nginx dedicated user is not part of any unexpected groups
+  shell: |
+    set -o pipefail
+    groups {{ nginx_username }} | awk '{ for (i=3; i<=NF; i++) print $i }'
+  args:
+    executable: /bin/bash
+  register: nginx_cmd_result
+  failed_when: nginx_cmd_result.rc != 0 or
+               (nginx_cmd_result.stdout_lines | length > 1) or
+               nginx_cmd_result.stdout != nginx_username
+  changed_when: false
+
+- name: Ensure the NGINX service account has an invalid shell
+  shell: |
+    set -o pipefail
+    S=`grep {{ nginx_username }} /etc/passwd | cut -d: -f7`
+    [ "$S" == "/usr/sbin/nologin" -o "$S" = "/sbin/nologin" ]
+  args:
+    executable: /bin/bash
+  register: nginx_cmd_result
+  failed_when: nginx_cmd_result.rc != 0
+  changed_when: false
+
+- name: Ensure the NGINX service account is locked
+  ansible.builtin.user:
+    name: "{{ nginx_username }}"
+    password_lock: true
+    password: '*'
+
+- name: Ensure NGINX directory is owned by root and is 0750
+  ansible.builtin.file:
+    path: /etc/nginx
+    owner: root
+    group: root
+    mode: '0750'
+
+
+- name: Check if directories need to have the permissions changed
+  command: find /etc/nginx -xdev -type d \( -perm -o+x -o -perm -o+r \)
+  register: nginx_cmd_result
+  failed_when: false
+  changed_when: false
+
+- name: Fix directories permissions
+  shell: |
+    set -o pipefail
+    find /etc/nginx -type d | xargs chmod 750
+  args:
+    executable: /bin/bash
+  register: nginx_cmd_result
+  failed_when: nginx_cmd_result.rc != 0
+  changed_when: true
+  when: (nginx_cmd_result.stdout_lines | default([])) | length > 0
+
+- name: Check if files need to have the permissions changed
+  command:
+    find /etc/nginx -xdev -type f \( -perm -o+x -o -perm -o+r -o -perm -o+w \)
+  register: nginx_cmd_result
+  failed_when: false
+  changed_when: false
+
+- name: Fix files permissions
+  shell: |
+    set -o pipefail
+    find /etc/nginx -type f | xargs chmod 640
+  args:
+    executable: /bin/bash
+  register: nginx_cmd_result
+  failed_when: nginx_cmd_result.rc != 0
+  changed_when: true
+  when: (nginx_cmd_result.stdout_lines | default([])) | length > 0
+
+- name: Ensure NGINX pid file is owned by root
+  ansible.builtin.file:
+    path: /var/run/nginx.pid
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Check if working_directory is set
+  shell: |
+    set -o pipefail
+    grep working_directory /etc/nginx/nginx.conf | awk '{print $2}' | tr -d ';'
+  args:
+    executable: /bin/bash
+  register: nginx_cmd_result
+  failed_when: false
+  changed_when: false
+
+- name: If working_directory is set, ensure owner and permissions are correct
+  ansible.builtin.file:
+    path: "{{ nginx_cmd_result.stdout }}"
+    owner: root
+    group: "{{ nginx_username }}"
+    mode: '0750'
+  when: nginx_cmd_result.stdout | length > 0

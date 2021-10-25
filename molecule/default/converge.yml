@@ -1,0 +1,36 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    nginx_proxy_sites:
+      - name: testsite
+        server_name: testsite.example.com
+        access_log_name: testsite_access.log
+        error_log_name: testsite_error.log
+        proxy_pass: http://localhost:9090/
+        using_certbot: false
+    nginx_create_redhat_default_site: true
+  pre_tasks:
+#    - name: update RedHat systems running yum
+#      yum:
+#        name: "*"
+#        state: latest
+#      when: ansible_pkg_mgr in ['yum', 'dnf']
+
+    - name: update Ubuntu/Debian systems
+      apt:
+#        upgrade: dist
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_pkg_mgr == "apt"
+
+    - name: Make sure some packages are installed
+      ansible.builtin.package:
+        name:
+          - sudo
+          - vim
+          - curl
+        state: latest
+
+  roles:
+    - role: guidugli.nginx
