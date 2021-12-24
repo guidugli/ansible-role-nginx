@@ -8,17 +8,33 @@
     group: root
     mode: '0640'
     backup: true
-    validate: /usr/sbin/nginx -c %s -t
   notify: Reload nginx configuration
 
-- name: Set security settings
+- name: Set /etc/nginx/options-ssl-nginx.conf file
   ansible.builtin.template:
-    src: 00_security.conf.j2
-    dest: /etc/nginx/conf.d/00_security.conf
+    src: options-ssl-nginx.conf.j2
+    dest: /etc/nginx/options-ssl-nginx.conf
     owner: root
     group: root
     mode: '0640'
+    backup: true
   notify: Reload nginx configuration
+
+- name: Default security certificates
+  blockinfile:
+    path: /etc/nginx/conf.d/00_default_cert.conf
+    block: |
+      ssl_certificate {{ nginx_ssl_certificate }}
+      ssl_certificate_key {{ nginx_ssl_certificate_key }}
+  when:
+    - nginx_ssl_certificate is defined
+    - nginx_ssl_certificate_key is defined
+
+- name: Remove default security certs if not defined
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d/00_default_cert.conf
+    state: absent
+  when: nginx_ssl_certificate is not defined or nginx_ssl_certificate_key is not defined
 
 - name: Copy configuration files
   ansible.builtin.copy:
@@ -30,6 +46,26 @@
   notify: Reload nginx configuration
   loop:
     - "00_log.conf"
+    - "01_default_site.conf"
+
+- name: Create /etc/nginx/ssl directory
+  ansible.builtin.file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Copy dummy certificates for default site
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/nginx/ssl/{{ item }}"
+    owner: root
+    group: root
+    mode: '0640'
+  loop:
+    - "nginx.crt"
+    - "nginx.key"
 
 - name: Copy Fedora default site configuration
   ansible.builtin.copy:
@@ -119,7 +155,6 @@
     owner: root
     group: root
     mode: '0750'
-
 
 - name: Check if directories need to have the permissions changed
   command: find /etc/nginx -xdev -type d \( -perm -o+x -o -perm -o+r \)

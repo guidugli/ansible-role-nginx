@@ -56,6 +56,16 @@ nginx_ssl_protocols: "TLSv1.2 TLSv1.3"
 nginx_ssl_session_cache: "shared:SSL:50m"
 nginx_ssl_session_timeout: "5m"
 nginx_proxy_ssl_protocols: "TLSv1.2 TLSv1.3"
+nginx_ssl_prefer_server_ciphers: false
+nginx_ssl_ciphers:
+  - ECDHE-ECDSA-AES128-GCM-SHA256
+  - ECDHE-RSA-AES128-GCM-SHA256
+  - ECDHE-ECDSA-AES256-GCM-SHA384
+  - ECDHE-RSA-AES256-GCM-SHA384
+  - ECDHE-ECDSA-CHACHA20-POLY1305
+  - ECDHE-RSA-CHACHA20-POLY1305
+  - DHE-RSA-AES128-GCM-SHA256
+  - DHE-RSA-AES256-GCM-SHA384
 
 # Directive sets the read timeout for the request body from client. The
 # timeout is set only if a body is not get in one readstep. If after this
@@ -99,7 +109,7 @@ nginx_slimit_connections: 5
 
 # Enables or disables inserting the "Vary: Accept-Encoding" response header
 # field if the directives gzip, gzip_static, or gunzip are active.
-nginx_gzip_vary: "off"
+nginx_gzip_vary: false
 
 # Enables or disables gzipping of responses for proxied requests depending on
 # the request and response. The fact that the request is proxied is determined
@@ -135,6 +145,11 @@ nginx_gzip_types:
   - image/svg+xml
   - application/xhtml+xml
   - application/atom+xml
+
+# If using one certificate for all virtual servers, you can
+# specify a single certificate to all
+nginx_default_ssl_certificate: "/etc/letsencrypt/live/example.net/fullchain.pem"
+nginx_default_ssl_certificate_key: "/etc/letsencrypt/live/example.net/privkey.pem"
 
 # If bot is just making random server scan for all domains, just deny it. You
 # must only allow configured virtual domain or reverse proxy requests. You don’t
