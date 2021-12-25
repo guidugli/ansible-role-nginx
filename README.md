@@ -31,9 +31,9 @@ Defines the number of worker processes. The value “auto” will try to autodet
 
 Changes the limit on the maximum number of open files (RLIMIT_NOFILE) for worker processes. Used to increase the limit without restarting the main process.
 
-    nginx_multi_accept: "off"
+    nginx_multi_accept: false
 
-multi_accept off: a worker accepts just a single connection, handles it and then returns to the kernel for the next event to process.
+multi_accept false: a worker accepts just a single connection, handles it and then returns to the kernel for the next event to process.
 
     nginx_use_epoll: false
 
@@ -86,6 +86,22 @@ Enables the specified protocols for requests to a proxied HTTPS server.
 > The TLSv1.1 and TLSv1.2 parameters (1.1.13, 1.0.12) work only when OpenSSL 1.0.1 or higher is used.
 > The TLSv1.3 parameter (1.13.0) works only when OpenSSL 1.1.1 or higher is used.
 
+    nginx_ssl_prefer_server_ciphers: false
+
+Specifies that server ciphers should be preferred over client ciphers when using the SSLv3 and TLS protocols.
+
+    nginx_ssl_ciphers:
+      - ECDHE-ECDSA-AES128-GCM-SHA256
+      - ECDHE-RSA-AES128-GCM-SHA256
+      - ECDHE-ECDSA-AES256-GCM-SHA384
+      - ECDHE-RSA-AES256-GCM-SHA384
+      - ECDHE-ECDSA-CHACHA20-POLY1305
+      - ECDHE-RSA-CHACHA20-POLY1305
+      - DHE-RSA-AES128-GCM-SHA256
+      - DHE-RSA-AES256-GCM-SHA384
+
+Specifies the enabled ciphers. The ciphers are specified in the format understood by the OpenSSL library. The full list can be viewed using the “openssl ciphers” command.
+
     nginx_client_body_timeout: 10
 
 Directive sets the read timeout for the request body from client. The timeout is set only if a body is not get in one readstep. If after this time the client send nothing, nginx returns error “Request time out” (408).
@@ -119,7 +135,7 @@ Directive assigns the maximum number and size of buffers for large headers to re
 
 Number of simultaneous connections for same ip address
 
-    nginx_gzip_vary: "off"
+    nginx_gzip_vary: false
 
 Enables or disables inserting the "Vary: Accept-Encoding" response header field if the directives gzip, gzip_static, or gunzip are active.
 
@@ -154,6 +170,11 @@ Sets the minimum HTTP version of a request required to compress a response.
 
 Enables gzipping of responses for the specified MIME types in addition to "text/html". The special value "*" matches any MIME type (0.8.29). Responses with the "text/html" type are always compressed.
 
+    #nginx_default_ssl_certificate: "/etc/letsencrypt/live/example.net/fullchain.pem"
+    #nginx_default_ssl_certificate_key: "/etc/letsencrypt/live/example.net/privkey.pem"
+
+If defined, set a default certificate to be used on the virtual sites. This is more efficient when using the same certificate for several virtual sites.
+
     nginx_allow_access_domains: []
 
 If bot is just making random server scan for all domains, just deny it. You must only allow configured virtual domain or reverse proxy requests. You don’t want to display request using an IP address
@@ -176,6 +197,10 @@ GET and POST are the most common methods on the Internet. Web server methods are
     #    using_certbot: false
 
 List of proxy configuration to set
+
+    nginx_site_files: []
+
+List of fiiles to copy to conf.d directory. Create files for virtual sites then add the names in this list in order to have them copied.
 
     nginx_create_redhat_default_site: false
 

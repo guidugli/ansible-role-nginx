@@ -148,8 +148,8 @@ nginx_gzip_types:
 
 # If using one certificate for all virtual servers, you can
 # specify a single certificate to all
-nginx_default_ssl_certificate: "/etc/letsencrypt/live/example.net/fullchain.pem"
-nginx_default_ssl_certificate_key: "/etc/letsencrypt/live/example.net/privkey.pem"
+#nginx_default_ssl_certificate: "/etc/letsencrypt/live/example.net/fullchain.pem"
+#nginx_default_ssl_certificate_key: "/etc/letsencrypt/live/example.net/privkey.pem"
 
 # If bot is just making random server scan for all domains, just deny it. You
 # must only allow configured virtual domain or reverse proxy requests. You don’t
