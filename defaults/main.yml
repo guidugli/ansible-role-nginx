@@ -19,7 +19,7 @@ nginx_level2_strict_check: false
 
 # multi_accept off: a worker accepts just a single connection, handles it and
 # then returns to the kernel for the next event to process.
-nginx_multi_accept: "off"
+nginx_multi_accept: false
 
 # Efficient method for processing connections (requires Linux 2.6+)
 nginx_use_epoll: false
@@ -175,8 +175,8 @@ nginx_proxy_sites: []
 #    ssl_certificate_key: /etc/letsencrypt/live/example.com/privkey.pem
 #    using_certbot: false
 
-# RedHat based distros only: create default site configuration
-nginx_create_redhat_default_site: false
+# Specify file names to be copied
+nginx_site_files: []
 
 # File handling cache
 
@@ -194,4 +194,4 @@ nginx_open_file_cache_valid: "30s"
 nginx_open_file_cache_min_uses: 5
 
 # Enables or disables caching of file lookup errors by open_file_cache.
-nginx_open_file_cache_errors: "off"
+nginx_open_file_cache_errors: false

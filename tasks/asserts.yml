@@ -8,17 +8,9 @@
     msg: "Invalid value for {{ item }}. Allowed values are 'yes', 'no', 'true', 'false'."
   loop:
     - nginx_level2_strict_check
-
-- name: Check variables that accept only on or off values
-  assert:
-    quiet: yes
-    that:
-      - (lookup('vars', item) | lower) in ['on','off']
-    msg: "Invalid value for {{ item }}. Allowed values are 'on', 'off'"
-  when: lookup('vars', item) is defined
-  loop:
-    - nginx_multi_accept
+    - nginx_ssl_prefer_server_ciphers
     - nginx_gzip_vary
+    - nginx_multi_accept
     - nginx_open_file_cache_errors
 
 - name: Check integer values
@@ -63,6 +55,22 @@
     - nginx_gzip_http_version
     - nginx_open_file_cache
     - nginx_open_file_cache_valid
+
+- name: Validate nginx_ssl_ciphers
+  assert:
+    quiet: true
+    that:
+      - nginx_ssl_ciphers is sequence
+    msg: "nginx_ssl_ciphers is not a valid sequence"
+  when: nginx_ssl_ciphers is defined
+
+- name: Validate nginx_site_files
+  assert:
+    quiet: true
+    that:
+      - nginx_site_files is sequence
+    msg: "nginx_site_files is not a valid sequence"
+  when: nginx_site_files is defined
 
 - name: Validate nginx_allowed_methods
   assert:
@@ -138,4 +146,6 @@
       - using_certbot | type_debug == 'bool'
     msg: "Invalid values for nginx_proxy_sites item {{ item.name }}"
     loop: "{{ nginx_proxy_sites }}"
-    when: nginx_proxy_sites is defined
+    when:
+      - nginx_proxy_sites is defined
+      - nginx_proxy_sites | length > 0

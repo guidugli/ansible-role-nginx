@@ -10,6 +10,11 @@
     backup: true
   notify: Reload nginx configuration
 
+- name: Delete default site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
 - name: Set /etc/nginx/options-ssl-nginx.conf file
   ansible.builtin.template:
     src: options-ssl-nginx.conf.j2
@@ -26,6 +31,7 @@
     block: |
       ssl_certificate {{ nginx_ssl_certificate }}
       ssl_certificate_key {{ nginx_ssl_certificate_key }}
+  notify: Reload nginx configuration
   when:
     - nginx_ssl_certificate is defined
     - nginx_ssl_certificate_key is defined
@@ -34,6 +40,7 @@
   ansible.builtin.file:
     path: /etc/nginx/conf.d/00_default_cert.conf
     state: absent
+  notify: Reload nginx configuration
   when: nginx_ssl_certificate is not defined or nginx_ssl_certificate_key is not defined
 
 - name: Copy configuration files
@@ -48,13 +55,26 @@
     - "00_log.conf"
     - "01_default_site.conf"
 
+- name: Copy user defined configuration files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/nginx/conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Reload nginx configuration
+  loop: "{{ nginx_site_files | default([]) }}"
+
+
 - name: Create /etc/nginx/ssl directory
   ansible.builtin.file:
     path: /etc/nginx/ssl
     state: directory
-    mode: '0755'
+    mode: '0750'
     owner: root
     group: root
+    modification_time: preserve
+    access_time: preserve
 
 - name: Copy dummy certificates for default site
   ansible.builtin.copy:
@@ -66,18 +86,6 @@
   loop:
     - "nginx.crt"
     - "nginx.key"
-
-- name: Copy Fedora default site configuration
-  ansible.builtin.copy:
-    src: 01_redhat_default_site.conf
-    dest: /etc/nginx/conf.d/01_redhat_default_site.conf
-    owner: root
-    group: root
-    mode: '0640'
-  notify: Reload nginx configuration
-  when:
-    - nginx_create_redhat_default_site
-    - ansible_distribution in ['Fedora', 'RedHat', 'CentOS']
 
 - name: Add proxy configuration
   vars:

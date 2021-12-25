@@ -8,10 +8,12 @@ include {{ nginx_modules_location }}/*.conf;
 
 events {
 	worker_connections {{ nginx_worker_connections | default(768) }};
-	multi_accept {{ nginx_multi_accept | default("off") }};
+	multi_accept {{ "on" if nginx_multi_accept else "off" | default("off") }};
+
 {%- if nginx_use_epoll is defined and nginx_use_epoll -%}
 	use epoll;
 {% endif %}
+
 }
 
 http {
@@ -125,7 +127,7 @@ http {
 	open_file_cache {{ nginx_open_file_cache | default("off") }};
 	open_file_cache_valid {{ nginx_open_file_cache_valid | default("60s") }};
 	open_file_cache_min_uses {{ nginx_open_file_cache_min_uses | default(1) }};
-	open_file_cache_errors {{ nginx_open_file_cache_errors | default("off") }};
+	open_file_cache_errors {{ "on" if nginx_open_file_cache_errors else "off" | default("off") }};
 
 	##
 	# Virtual Host Configs
