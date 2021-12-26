@@ -1,8 +1,8 @@
 user {{ nginx_username }};
 worker_processes {{ nginx_worker_processes | default("auto")}};
-{%- if nginx_worker_rlimit_nofile is defined -%}
+{%- if nginx_worker_rlimit_nofile is defined %}
 worker_rlimit_nofile {{ nginx_worker_rlimit_nofile }};
-{% endif %}
+{%- endif %}
 pid /run/nginx.pid;
 include {{ nginx_modules_location }}/*.conf;
 
@@ -10,7 +10,7 @@ events {
 	worker_connections {{ nginx_worker_connections | default(768) }};
 	multi_accept {{ "on" if nginx_multi_accept else "off" | default("off") }};
 
-{%- if nginx_use_epoll is defined and nginx_use_epoll -%}
+{%- if nginx_use_epoll is defined and nginx_use_epoll %}
 	use epoll;
 {% endif %}
 
@@ -30,7 +30,7 @@ http {
 	types_hash_max_size {{ nginx_types_hash_max_size | default(2048) }};
 	server_tokens off;
 
-{%- if nginx_server_names_hash_bucket_size is defined -%}
+{% if nginx_server_names_hash_bucket_size is defined %}
 	server_names_hash_bucket_size {{ nginx_server_names_hash_bucket_size }};
 {% else %}
 	# server_names_hash_bucket_size 64;
@@ -51,7 +51,7 @@ http {
 	ssl_stapling_verify on;
 	ssl_session_cache {{ nginx_ssl_session_cache | default("shared:SSL:50m") }};
 	ssl_session_timeout {{ nginx_ssl_session_timeout | default("5m") }};
-{%- if nginx_ssl_ciphers is defined -%}
+{% if nginx_ssl_ciphers is defined %}
         ssl_ciphers "{{ nginx_ssl_ciphers | join(':') }}";
 {% endif %}
 
@@ -110,14 +110,13 @@ http {
 	gzip_vary {{ "on" if nginx_gzip_vary else "off" | default("off") }};
 	gzip_proxied {{ nginx_gzip_proxied | default("off") }};
 	gzip_comp_level {{ nginx_gzip_comp_level | default(1) }};
-{%- if nginx_gzip_buffers is defined -%}
+{% if nginx_gzip_buffers is defined %}
 	gzip_buffers {{ nginx_gzip_buffers }};
 {% else %}
 	# gzip_buffers 16 8k;
 {% endif %}
 	gzip_http_version {{ nginx_gzip_http_version | default("1.1") }};
-
-{%- if (nginx_gzip_types is defined) and (nginx_gzip_types | length > 0) -%}
+{% if (nginx_gzip_types is defined) and (nginx_gzip_types | length > 0) %}
 	gzip_types {{ nginx_gzip_types | join(' ') }};
 {% else %}
 	# gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
