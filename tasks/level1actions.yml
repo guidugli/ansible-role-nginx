@@ -26,7 +26,7 @@
   notify: Reload nginx configuration
 
 - name: Default security certificates
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: /etc/nginx/conf.d/00_default_cert.conf
     block: |
       ssl_certificate {{ nginx_ssl_certificate }}
@@ -105,7 +105,7 @@
 # feature enables directory listing, which could be useful in attacker
 # reconnaissance, so it should be disabled.
 - name: Ensure the autoindex module is disabled
-  shell: egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf /etc/nginx/conf.d/*
+  ansible.builtin.shell: egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf /etc/nginx/conf.d/*
   register: nginx_cmd_result
   changed_when: false
   failed_when: nginx_cmd_result.rc == 0
@@ -122,14 +122,14 @@
 #  failed_when: nginx_cmd_result.rc != 0
 
 - name: Verify the nginx dedicated user is not privileged
-  command: "sudo -l -U {{ nginx_username }}"
+  ansible.builtin.command: "sudo -l -U {{ nginx_username }}"
   register: nginx_cmd_result
   failed_when: nginx_cmd_result.rc != 0 or
                "is not allowed to run sudo" not in nginx_cmd_result.stdout
   changed_when: false
 
 - name: Verify the nginx dedicated user is not part of any unexpected groups
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail
     groups {{ nginx_username }} | awk '{ for (i=3; i<=NF; i++) print $i }'
   args:
@@ -141,7 +141,7 @@
   changed_when: false
 
 - name: Ensure the NGINX service account has an invalid shell
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail
     S=`grep {{ nginx_username }} /etc/passwd | cut -d: -f7`
     [ "$S" == "/usr/sbin/nologin" -o "$S" = "/sbin/nologin" ]
@@ -165,13 +165,13 @@
     mode: '0750'
 
 - name: Check if directories need to have the permissions changed
-  command: find /etc/nginx -xdev -type d \( -perm -o+x -o -perm -o+r \)
+  ansible.builtin.command: find /etc/nginx -xdev -type d \( -perm -o+x -o -perm -o+r \)
   register: nginx_cmd_result
   failed_when: false
   changed_when: false
 
 - name: Fix directories permissions
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail
     find /etc/nginx -type d | xargs chmod 750
   args:
@@ -182,14 +182,14 @@
   when: (nginx_cmd_result.stdout_lines | default([])) | length > 0
 
 - name: Check if files need to have the permissions changed
-  command:
+  ansible.builtin.command:
     find /etc/nginx -xdev -type f \( -perm -o+x -o -perm -o+r -o -perm -o+w \)
   register: nginx_cmd_result
   failed_when: false
   changed_when: false
 
 - name: Fix files permissions
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail
     find /etc/nginx -type f | xargs chmod 640
   args:
@@ -207,7 +207,7 @@
     mode: '0644'
 
 - name: Check if working_directory is set
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail
     grep working_directory /etc/nginx/nginx.conf | awk '{print $2}' | tr -d ';'
   args:

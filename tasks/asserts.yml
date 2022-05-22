@@ -1,7 +1,7 @@
 ---
 
 - name: Check if these 'yes','no','true','false' values are invalid
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - (lookup('vars', item) | lower) in ['true','false']
@@ -14,7 +14,7 @@
     - nginx_open_file_cache_errors
 
 - name: Check integer values
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - (lookup('vars', item) | int(-1)) >= 0
@@ -32,7 +32,7 @@
     - nginx_open_file_cache_min_uses
 
 - name: Check string values
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - lookup('vars', item) is defined
@@ -57,7 +57,7 @@
     - nginx_open_file_cache_valid
 
 - name: Validate nginx_ssl_ciphers
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - nginx_ssl_ciphers is sequence
@@ -65,7 +65,7 @@
   when: nginx_ssl_ciphers is defined
 
 - name: Validate nginx_site_files
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - nginx_site_files is sequence
@@ -73,7 +73,7 @@
   when: nginx_site_files is defined
 
 - name: Validate nginx_allowed_methods
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - nginx_allowed_methods is sequence
@@ -81,7 +81,7 @@
   when: nginx_allowed_methods is defined
 
 - name: Validate nginx_allowed_methods items
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - item in in ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
@@ -90,7 +90,7 @@
   when: nginx_allowed_methods is defined
 
 - name: Validate nginx_gzip_proxied
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - nginx_gzip_proxied in ['off', 'expired', 'no-cache', 'no-store',
@@ -99,7 +99,7 @@
   when: nginx_gzip_proxied is defined
 
 - name: Validate nginx_gzip_types
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - nginx_gzip_types is sequence
@@ -107,7 +107,7 @@
   when: nginx_gzip_types is defined
 
 - name: Validate nginx_gzip_types items
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - item is string
@@ -117,7 +117,7 @@
   when: nginx_gzip_types is defined
 
 - name: Validate list contents of nginx_proxy_sites
-  assert:
+  ansible.builtin.assert:
     quiet: true
     that:
       - item.name is defined

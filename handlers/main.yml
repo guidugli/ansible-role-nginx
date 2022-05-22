@@ -2,4 +2,4 @@
 # handlers file for nginx
 
 - name: Reload nginx configuration
-  command: "nginx -s reload"
+  ansible.builtin.command: "nginx -s reload"

@@ -2,18 +2,18 @@
 # tasks file for nginx
 
 - name: Install nginx packages
-  package:
+  ansible.builtin.package:
     name: "{{ nginx_packages }}"
     state: present
 
 - name: Enable nginx service
-  service:
+  ansible.builtin.service:
     name: "nginx"
     enabled: true
     state: started
 
 - name: Perform level 1 actions
-  import_tasks: level1actions.yml
+  ansible.builtin.import_tasks: level1actions.yml
 
 - name: Perform level 2 actions
-  import_tasks: level2actions.yml
+  ansible.builtin.import_tasks: level2actions.yml
