@@ -12,18 +12,18 @@
         state: directory
         mode: 0755
         recurse: yes
-  
+
     - name: Check if index.html is a link
       ansible.builtin.stat:
         path: /usr/share/nginx/html/index.html
       register: nginx_cmd_result
-  
+
     - name: Remove index.html if it is a link
       ansible.builtin.file:
         path: /usr/share/nginx/html/index.html
         state: absent
       when: nginx_cmd_result.stat.islnk is defined and nginx_cmd_result.stat.islnk
-  
+
     - name: Ensure index.html exists so test works
       ansible.builtin.file:
         path: /usr/share/nginx/html/index.html
@@ -32,7 +32,7 @@
         access_time: preserve
         follow: true
         mode: 0644
-  
+
     - name: Add index.html on centos 7 to prevent test error
       ansible.builtin.shell: |
         cat <<EOF > /usr/share/nginx/html/index.html
@@ -47,7 +47,7 @@
         </html>
         EOF
       changed_when: false
-  
+
     - name: Add default site for testing only
       ansible.builtin.blockinfile:
         path: /etc/nginx/conf.d/01_defsite.conf
@@ -59,20 +59,20 @@
               listen       [::]:80;
               server_name  localhost;
               root         /usr/share/nginx/html;
-  
+
               error_page 404 /404.html;
               location = /404.html {
               }
-  
+
               error_page 500 502 503 504 /50x.html;
               location = /50x.html {
               }
           }
-  
+
     - name: Reload nginx configuration
       ansible.builtin.command: "nginx -s reload"
       changed_when: false
-  
+
     - name: Check if nginx is listening on port 80
       ansible.builtin.uri:
         url: http://localhost/
