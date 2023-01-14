@@ -33,7 +33,7 @@
       follow: true
       mode: 0644
 
-  - name: add index.html on centos 7 to prevent test error
+  - name: Add index.html on centos 7 to prevent test error
     ansible.builtin.shell: |
       cat <<EOF > /usr/share/nginx/html/index.html
       <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -48,7 +48,7 @@
       EOF
     changed_when: false
 
-  - name: add default site for testing only
+  - name: Add default site for testing only
     ansible.builtin.blockinfile:
       path: /etc/nginx/conf.d/01_defsite.conf
       create: yes

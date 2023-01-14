@@ -4,7 +4,7 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - (lookup('vars', item) | lower) in ['true','false']
+      - (lookup('vars', item) | lower) in ['true', 'false']
     msg: "Invalid value for {{ item }}. Allowed values are 'yes', 'no', 'true', 'false'."
   loop:
     - nginx_level2_strict_check
