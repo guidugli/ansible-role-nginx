@@ -3,3 +3,4 @@
 
 - name: Reload nginx configuration
   ansible.builtin.command: "nginx -s reload"
+  changed_when: true
