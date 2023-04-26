@@ -29,7 +29,6 @@
         name:
           - sudo
           - vim
-          - curl
         state: latest
 
   roles:
