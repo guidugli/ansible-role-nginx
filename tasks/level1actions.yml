@@ -82,7 +82,7 @@
     dest: "/etc/nginx/ssl/{{ item }}"
     owner: root
     group: root
-    mode: '0640'
+    mode: '0440'
   loop:
     - "nginx.crt"
     - "nginx.key"
@@ -121,12 +121,21 @@
 #  register: nginx_cmd_result
 #  failed_when: nginx_cmd_result.rc != 0
 
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Check if sudo is installed
+  ansible.builtin.setfact:
+    nginx_is_sudo_installed: "{{ 'sudo' in ansible_facts.packages }}"
+
 - name: Verify the nginx dedicated user is not privileged
   ansible.builtin.command: "sudo -l -U {{ nginx_username }}"
   register: nginx_cmd_result
   failed_when: nginx_cmd_result.rc != 0 or
                "is not allowed to run sudo" not in nginx_cmd_result.stdout
   changed_when: false
+  when: nginx_is_sudo_installed
 
 - name: Verify the nginx dedicated user is not part of any unexpected groups
   ansible.builtin.shell: |
@@ -221,5 +230,5 @@
     path: "{{ nginx_cmd_result.stdout }}"
     owner: root
     group: "{{ nginx_username }}"
-    mode: '0750'
+    mode: '0770'
   when: nginx_cmd_result.stdout | length > 0
