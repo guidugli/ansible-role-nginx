@@ -17,11 +17,14 @@
 #        state: latest
 #      when: ansible_pkg_mgr in ['yum', 'dnf']
 
+    - name: Run the equivalent of "apt-get clean" as a separate step
+      ansible.builtin.apt:
+        clean: yes
+      when: ansible_pkg_mgr == "apt"
+
     - name: Update Ubuntu/Debian systems
       ansible.builtin.apt:
-#        upgrade: dist
         update_cache: true
-        cache_valid_time: 3600
       when: ansible_pkg_mgr == "apt"
 
     - name: Make sure some packages are installed

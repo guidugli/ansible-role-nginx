@@ -82,7 +82,7 @@
     dest: "/etc/nginx/ssl/{{ item }}"
     owner: root
     group: root
-    mode: '0440'
+    mode: '0640'
   loop:
     - "nginx.crt"
     - "nginx.key"
@@ -126,7 +126,7 @@
     manager: auto
 
 - name: Check if sudo is installed
-  ansible.builtin.setfact:
+  ansible.builtin.set_fact:
     nginx_is_sudo_installed: "{{ 'sudo' in ansible_facts.packages }}"
 
 - name: Verify the nginx dedicated user is not privileged
