@@ -1,6 +1,8 @@
 Ansible Role: nginx
 =========
 
+DEPRECATION NOTICE: nginx has similar modules, so this is being deprecated. 
+
 An Ansible Role that install and configure nginx on RHEL/CentOS, Fedora and Debian/Ubuntu. The configuration is focused on security.
 
 Requirements
